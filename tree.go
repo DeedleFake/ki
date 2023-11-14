@@ -17,16 +17,16 @@ type Tree struct {
 	name  string
 }
 
-// Parse parses a nweline-separated list of paths and builds a tree
-// from it.
+// Parse parses a nweline-separated list of slash-separated paths and
+// builds a tree from it.
 func Parse(r io.Reader) (*Tree, error) {
 	var root Tree
 	err := root.Parse(r)
 	return &root, err
 }
 
-// Parse parses a newline-separated list of paths and adds it to the
-// tree rooted at t.
+// Parse parses a newline-separated list of slash-separated paths and
+// adds them to the tree rooted at t.
 func (t *Tree) Parse(r io.Reader) error {
 	s := bufio.NewScanner(r)
 	for s.Scan() {
@@ -62,7 +62,7 @@ func (t *Tree) insert(name string) {
 	t.order = slices.Insert(t.order, i, name)
 }
 
-// Add adds a single path to the tree rooted at t.
+// Add adds a single slash-separated path to the tree rooted at t.
 func (t *Tree) Add(p string) {
 	if path.IsAbs(p) {
 		p = p[1:]
@@ -73,6 +73,13 @@ func (t *Tree) Add(p string) {
 
 	parts := strings.Split(p, "/")
 	t.addPath(parts)
+}
+
+// Name returns the name of the path element represented by t. If t is
+// the root of a tree as returned by Parse, this will be the empty
+// string.
+func (t *Tree) Name() string {
+	return t.name
 }
 
 // Children yields the child trees of t in ascending alphabetical
