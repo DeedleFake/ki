@@ -12,8 +12,14 @@ import (
 )
 
 func printTree(t *ki.Tree, depth int) {
-	pre := strings.Repeat("  ", depth)
-	fmt.Printf("%v%v\n", pre, t.Name())
+	var pre string
+	if depth >= 0 {
+		pre = strings.Repeat("  ", depth)
+	}
+
+	if t.Name() != "" {
+		fmt.Printf("%v%v\n", pre, t.Name())
+	}
 	t.Children(func(c *ki.Tree) bool {
 		printTree(c, depth+1)
 		return true
@@ -42,5 +48,5 @@ func main() {
 		os.Exit(2)
 	}
 
-	printTree(tree, 0)
+	printTree(tree, -1)
 }
