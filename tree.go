@@ -1,3 +1,4 @@
+// Package ki creates tree structures from lists of file paths.
 package ki
 
 import (
@@ -8,21 +9,31 @@ import (
 	"strings"
 )
 
+// A Tree is a tree of paths. Each Tree instance is a directory in
+// that path tree.
 type Tree struct {
 	c     lazyMap[string, *Tree]
 	order []string
 	name  string
 }
 
+// Parse parses a nweline-separated list of paths and builds a tree
+// from it.
 func Parse(r io.Reader) (*Tree, error) {
 	var root Tree
+	err := root.Parse(r)
+	return &root, err
+}
 
+// Parse parses a newline-separated list of paths and adds it to the
+// tree rooted at t.
+func (t *Tree) Parse(r io.Reader) error {
 	s := bufio.NewScanner(r)
 	for s.Scan() {
 		line := path.Clean(strings.TrimSpace(s.Text()))
-		root.Add(line)
+		t.Add(line)
 	}
-	return &root, s.Err()
+	return s.Err()
 }
 
 func (t *Tree) addPath(parts []string) {
@@ -51,6 +62,7 @@ func (t *Tree) insert(name string) {
 	t.order = slices.Insert(t.order, i, name)
 }
 
+// Add adds a single path to the tree rooted at t.
 func (t *Tree) Add(p string) {
 	if path.IsAbs(p) {
 		p = p[1:]
@@ -63,17 +75,25 @@ func (t *Tree) Add(p string) {
 	t.addPath(parts)
 }
 
-func (t *Tree) Children() []*Tree {
+// Children yields the child trees of t in ascending alphabetical
+// order.
+func (t *Tree) Children(yield func(*Tree) bool) {
 	if len(t.c) == 0 {
-		return nil
+		return
 	}
 
 	c := t.c.M()
-	s := make([]*Tree, 0, len(c))
 	for _, name := range t.order {
-		s = append(s, c[name])
+		if !yield(c[name]) {
+			return
+		}
 	}
-	return s
+	return
+}
+
+// NumChildren returns the number of t's child trees.
+func (t *Tree) NumChildren() int {
+	return len(t.c)
 }
 
 type lazyMap[K comparable, V any] map[K]V
